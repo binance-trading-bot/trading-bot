@@ -2,6 +2,8 @@ import json
 from wsimple.api import Wsimple
 import yfinance as yf
 
+# GbWu9sUZrmDl1GvB1ukBowq89vlnPlnq93M5OmBYC9nQirJ3zUGjAdttHIAqd8Eu - Key
+
 def get_otp():
     return input("Enter otpnumber: \n>>>")
 
