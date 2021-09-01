@@ -2,8 +2,6 @@ import os
 from time import sleep
 import datetime
 import pandas as pd
-import numpy as np
-from binance import ThreadedWebsocketManager
 from binance.client import Client
 print("here")
 #init
@@ -162,7 +160,6 @@ while True:
 	klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_6HOUR, str(from_dt), str(to_dt))
 	for x in range(len(klines)):
 		klines[x]=klines[x][1:5]
-		print(list)
 	print(klines)
 	# Create the pandas DataFrame
 	df = pd.DataFrame(klines, columns=['Open', 'High','Low','Close'])
