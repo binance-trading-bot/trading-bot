@@ -1,28 +1,32 @@
 import os
 from time import sleep
-
+import datetime
 import pandas as pd
 import numpy as np
 from binance import ThreadedWebsocketManager
 from binance.client import Client
-
+print("here")
 #init
 api_key = 'TLnYum0nZJrY5uZAypPwmEOdxeAlVHdcY61ARLbwMXMUFJoInR5IzeAFrLe2XKhM'
 api_secret = 'qsl7U0gNf9lQxSm6GFbplHEU6nu5nI2zQ6ZbHKTMesv3S4OUgnQKsS0ILWmWSf8E'
 client = Client(api_key, api_secret)
-price = {'BTCUSDT': None, 'error':False}
-
-def btc_pairs_trade(msg):
-	''' define how to process incoming WebSocket messages '''
-	if msg['e'] != 'error':
-		price['BTCUSDT'] = float(msg['c'])
-	else:
-		price['error'] = True
-   
-  #init and start websocket
-bsm = ThreadedWebsocketManager()
-bsm.start_symbol_ticker_socket(symbol='BTCUSDT', callback=btc_pairs_trade)
-bsm.start()
+# price = {'BTCUSDT': None, 'error':False}
+# print("here0")
+# def btc_pairs_trade(msg):
+# 	''' define how to process incoming WebSocket messages '''
+# 	if msg['e'] != 'error':
+# 		price['BTCUSDT'] = float(msg['c'])
+# 	else:
+# 		price['error'] = True
+#
+#   #init and start websocket
+# bsm = ThreadedWebsocketManager(api_key=api_key, api_secret=api_secret)
+# print("error")
+# bsm.start()
+# bsm.start_symbol_ticker_socket(symbol='BTCUSDT', callback=btc_pairs_trade)
+# print("here1")
+#
+# print("here2")
 
 #Main 
 def candle_score(lst_0,lst_1,lst_2):    
@@ -140,33 +144,46 @@ def candle_df(df):
 
 #create order
 
-while not price['BTCUSDT']:
-	# wait for WebSocket to start streaming data
-	sleep(0.1)
+# while not price['BTCUSDT']:
+# 	# wait for WebSocket to start streaming data
+# 	sleep(0.1)
 
 while True:
 	# error check to make sure WebSocket is working
-	if price['error']:
-		# stop and restart socket
-		bsm.stop()
-		sleep(2)
-		bsm.start()
-		price['error'] = False
-	else:
-		if df_candle['candle_cumsum']>1:
-			try:
-				order = client.order_market_buy(symbol='BTCUSDT', quantity=10)
-				break
-			except Exception as e:
-				print(e)
- 
-		if df_candle['candle_cumsum']<1:
-			try:
-				order = client.order_market_sell(symbol='BTCUSDT', quantity=10)
-				break
-			except Exception as e:
-				print(e)
-	sleep(0.1)
+	# if price['error']:
+	# 	# stop and restart socket
+	# 	bsm.stop()
+	# 	sleep(2)
+	# 	bsm.start()
+	# 	price['error'] = False
+	# else:
+	to_dt = datetime.datetime.now().date()
+	from_dt = to_dt - datetime.timedelta(days=14)
+	klines = client.get_historical_klines("BTCUSDT", Client.KLINE_INTERVAL_6HOUR, str(from_dt), str(to_dt))
+	for x in range(len(klines)):
+		klines[x]=klines[x][1:5]
+		print(list)
+	print(klines)
+	# Create the pandas DataFrame
+	df = pd.DataFrame(klines, columns=['Open', 'High','Low','Close'])
+	print(klines)
+	df = df.apply(pd.to_numeric, errors='coerce')
+	df_candle = candle_df(df)
+	df_candle_score=float(df_candle['candle_cumsum'].iloc[[-1]])
+	if df_candle_score>1:
+		try:
+			order = client.order_market_buy(symbol='BTCUSDT', quantity=10)
+			break
+		except Exception as e:
+			print(e)
+
+	if df_candle_score<1:
+		try:
+			order = client.order_market_sell(symbol='BTCUSDT', quantity=10)
+			break
+		except Exception as e:
+			print(e)
+	sleep(0.2)
 
 
 bsm.stop()
